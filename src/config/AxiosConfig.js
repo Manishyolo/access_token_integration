@@ -8,8 +8,22 @@ const AxiosInstance = axios.create({
 AxiosInstance.interceptors.response.use(
     (response)=>{
         console.log("response from interceptor", response);
+        return response;
     }
-    ,(err)=>{
+    ,async(err)=>{
+        let originalRequest = err.config;
+        if(err.response.status === 401 || !originalRequest._retry){
+            originalRequest._retry = true;
+            try{
+               let res =  await AxiosInstance.get("/api/user/get-accessToken");
+               console.log(res)
+                return AxiosInstance(originalRequest);
+            }catch(error){
+                console.log("error from refresh token", error);
+                window.location.href = "/"; // Redirect to login page
+                return Promise.reject(error);
+            }
+        }
         console.log("error from interceptor", err);
     })
 
